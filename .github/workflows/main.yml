@@ -1,0 +1,73 @@
+name: Check
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'list.txt'
+jobs:
+  split-file:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v2
+      - name: Split List
+        run: |
+          mkdir -p list/
+          cd list/
+          split -l 20000 ../list.txt
+          pwd
+          ls -la
+      - name: Store Splited List
+        uses: actions/upload-artifact@v1
+        with:
+          name: splited-list
+          path: ./list
+  coded-by-sh0ya1337:
+    needs: split-file
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        chklist: [xaa, xab, xac, xad, xae, xaf, xag, xah, xai, xaj, xak, xal, xam, xan, xao, xap, xaq, xar, xas, xat, xau, xav, xaw, xax, xay]
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v2
+      - name: Get Splited Lists
+        uses: actions/download-artifact@v1
+        with:
+          name: splited-list
+          path: ./list
+      - name: Checker
+        run: |
+          pwd
+          olp=${{ matrix.chklist }}
+          if [ -f "list/${olp}" ]; then
+            timeout 35m python3 main.py ${olp}
+          else
+            echo "Skipping......"
+          fi
+        continue-on-error: true
+      - name: Result
+        uses: actions/upload-artifact@v2
+        with:
+          name: results
+          path: ./results
+          if-no-files-found: ignore
+  save-as-one:
+    needs: coded-by-sh0ya1337
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get Results
+        uses: actions/download-artifact@v1
+        with:
+          name: results
+          path: ./checked
+      - name: Save As One
+        run: |
+          mkdir -p results
+          find ./checked | grep ".txt" &> /dev/null && cat ./checked/*.txt >> ./results/env.txt
+      - name: Upload Final Artifacts
+        uses: actions/upload-artifact@v1
+        with:
+          name: env
+          path: ./results
